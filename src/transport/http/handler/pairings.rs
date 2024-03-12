@@ -259,6 +259,7 @@ async fn check_admin(controller_id: &pointer::ControllerId, storage: &pointer::S
         .unwrap()
         .deref()
         .ok_or(tlv::Error::Authentication)?;
+    dbg!("admin controller id {:?}", &controller_id);
     match storage.lock().await.load_pairing(&controller_id).await {
         Err(_) => Err(tlv::Error::Authentication),
         Ok(controller) => match controller.permissions {

@@ -189,6 +189,17 @@ impl Storage for FileStorage {
         Ok(pairing)
     }
 
+    async fn load_admin_pairing(&self) -> Result<Pairing> {
+        let key = format!("pairings/admin.json");
+        let pairing_bytes = self.read_bytes(&key).await?;
+
+        let pairing = Pairing::from_bytes(&pairing_bytes)?;
+
+        debug!("loaded admin Pairing: {:?}", &pairing);
+
+        Ok(pairing)
+    }
+
     async fn save_pairing(&mut self, pairing: &Pairing) -> Result<()> {
         if pairing.permissions == Permissions::Admin {
             let pairing_bytes = pairing.as_bytes()?;

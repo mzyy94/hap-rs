@@ -275,6 +275,7 @@ async fn handle_exchange(
                 )?;
 
                 let sub_tlv = tlv::decode(&decrypted_data);
+                debug!("setup received sub-TLV: {:?}", &sub_tlv);
                 let device_pairing_id = sub_tlv.get(&(Type::Identifier as u8)).ok_or(tlv::Error::Unknown)?;
                 let device_ltpk = ed25519_dalek::PublicKey::from_bytes(
                     sub_tlv.get(&(Type::PublicKey as u8)).ok_or(tlv::Error::Unknown)?,

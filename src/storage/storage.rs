@@ -21,6 +21,8 @@ pub trait Storage: Send + Sync {
     async fn delete_aid_cache(&mut self) -> Result<()>;
     /// Loads a [`Pairing`](Pairing) from the [`Storage`](Storage).
     async fn load_pairing(&self, id: &Uuid) -> Result<Pairing>;
+    /// Loads an admin [`Pairing`](Pairing) from the [`Storage`](Storage).
+    async fn load_admin_pairing(&self) -> Result<Pairing>;
     /// Saves a [`Pairing`](Pairing) to the [`Storage`](Storage).
     async fn save_pairing(&mut self, pairing: &Pairing) -> Result<()>;
     /// Deletes the [`Pairing`](Pairing) from the [`Storage`](Storage).

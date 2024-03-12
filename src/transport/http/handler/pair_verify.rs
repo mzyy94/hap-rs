@@ -8,7 +8,7 @@ use hyper::{body::Buf, Body};
 use log::{debug, info};
 use rand::rngs::OsRng;
 use signature::{Signer, Verifier};
-use std::str;
+use std::{ops::Deref, str};
 use uuid::Uuid;
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
@@ -18,6 +18,7 @@ use crate::{
     transport::{hkdf_extract_and_expand, http::handler::TlvHandlerExt, tcp},
 };
 
+#[derive(Debug)]
 struct Session {
     b_pub: PublicKey,
     a_pub: PublicKey,
@@ -98,7 +99,7 @@ impl TlvHandlerExt for PairVerify {
     fn handle(
         &mut self,
         step: Step,
-        _: pointer::ControllerId,
+        controller_id: pointer::ControllerId,
         config: pointer::Config,
         storage: pointer::Storage,
         _: pointer::EventEmitter,
@@ -109,7 +110,7 @@ impl TlvHandlerExt for PairVerify {
                     Ok(res) => Ok(res),
                     Err(err) => Err(tlv::ErrorContainer::new(StepNumber::StartRes as u8, err)),
                 },
-                Step::Finish { data } => match handle_finish(self, storage, &data).await {
+                Step::Finish { data } => match handle_finish(self, storage, &controller_id, &data).await {
                     Ok(res) => Ok(res),
                     Err(err) => Err(tlv::ErrorContainer::new(StepNumber::FinishRes as u8, err)),
                 },
@@ -188,10 +189,19 @@ async fn handle_start(
 async fn handle_finish(
     handler: &mut PairVerify,
     storage: pointer::Storage,
+    controller_id: &pointer::ControllerId,
     data: &[u8],
 ) -> Result<tlv::Container, tlv::Error> {
     info!("pair verify M3: received verify finish request");
 
+    // match controller_id
+    //     .read()
+    //     .unwrap()
+    //     .deref()
+    //     .ok_or(tlv::Error::Authentication){
+    //         Ok(controller_id) =>             info!("controller id: {:?}", controller_id),
+    //         _ => info!("Failed to read controller id"),
+    //     };
     match handler.session {
         None => Err(tlv::Error::Unknown),
         Some(ref mut session) => {
@@ -224,7 +234,12 @@ async fn handle_finish(
             let uuid_str = str::from_utf8(device_pairing_id)?;
             let pairing_uuid = Uuid::parse_str(uuid_str)?;
             debug!("device pairing UUID: {:?}", &pairing_uuid);
-            let pairing = storage.lock().await.load_pairing(&pairing_uuid).await?;
+            let pairing = match storage.lock().await.load_pairing(&pairing_uuid).await {
+                Ok(pairing) => pairing,
+                _ => {
+                    storage.lock().await.load_admin_pairing().await?
+                }
+            };
             debug!("loaded pairing: {:?}", &pairing);
 
             let mut device_info: Vec<u8> = Vec::new();

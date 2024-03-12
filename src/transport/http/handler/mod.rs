@@ -65,6 +65,14 @@ impl<T: TlvHandlerExt + Send + Sync> HandlerExt for TlvHandler<T> {
         event_emitter: pointer::EventEmitter,
     ) -> BoxFuture<Result<Response<Body>>> {
         async move {
+            // match controller_id
+            // .clone()
+            // .read()
+            // .unwrap()
+            // .ok_or(tlv::Error::Authentication){
+            //     Ok(controller_id) =>            { dbg!("HANDLE controller id: {:?}", controller_id);},
+            //     _ =>{ dbg!("HANDLE Failed to read controller id");},
+            // };
             let response = match self.0.parse(body).await {
                 Err(e) => e.encode(),
                 Ok(step) => match self.0.handle(step, controller_id, config, storage, event_emitter).await {

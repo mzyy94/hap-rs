@@ -121,6 +121,15 @@ impl Service<Request<Body>> for Api {
         let accessory_database = self.accessory_database.clone();
         let event_emitter = self.event_emitter.clone();
 
+        match controller_id
+            .clone()
+            .read()
+            .unwrap()
+            .ok_or(Error::AccessoryNotFound) {
+                Ok(controller_id) =>            { dbg!("HANDLE controller id: {:?}", controller_id);},
+                _ =>{ dbg!("HANDLE Failed to read controller id");},
+            };
+
         let fut = async move {
             match handler.take() {
                 Some(handler) =>
